@@ -1,0 +1,41 @@
+clusters:
+  - cluster_id: ascend-910c
+    vendor: ascend
+    arch: arm
+    gpu_type: Ascend 910C
+    vram_gb: 128
+    nodes: 2
+    gpus_per_node: 8
+    tags:
+      scene: large-ascend-model
+
+  - cluster_id: ascend-910b3
+    vendor: ascend
+    arch: arm
+    gpu_type: Ascend 910B3
+    vram_gb: 64
+    nodes: 2
+    gpus_per_node: 8
+    tags:
+      scene: medium-ascend-model
+
+  - cluster_id: nv-120
+    vendor: nvidia
+    arch: x86
+    gpu_type: L20
+    vram_gb: 48
+    nodes: 4
+    gpus_per_node: 8
+    tags:
+      scene: general-nvidia
+
+  - cluster_id: nv-h20
+    vendor: nvidia
+    arch: x86
+    gpu_type: H20
+    vram_gb: 96
+    nodes: 1
+    gpus_per_node: 8
+    tags:
+      scene: large-nvidia-model
+
