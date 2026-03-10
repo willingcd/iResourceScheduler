@@ -20,7 +20,7 @@ def plan_for_cluster(
     spec: ClusterSpec,
     state: ClusterState,
     estimated: EstimatedMemory,
-    effective_ratio: float = 0.9,
+    effective_ratio: float = 0.98,
     allow_multi_node: bool = True,
 ) -> Plan:
     """

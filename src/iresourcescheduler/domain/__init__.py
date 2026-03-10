@@ -6,6 +6,8 @@ from .models import (
     Plan,
     Decision,
     FailureEvent,
+    Vendor,
+    Parallelism,
 )
 
 __all__ = [
@@ -16,5 +18,7 @@ __all__ = [
     "Plan",
     "Decision",
     "FailureEvent",
+    "Vendor",
+    "Parallelism",
 ]
 

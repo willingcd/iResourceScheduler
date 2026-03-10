@@ -7,7 +7,9 @@ name = "iresourcescheduler"
 version = "0.1.0"
 description = "Intelligent GPU resource scheduler for heterogeneous clusters"
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+  "PyYAML>=6.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

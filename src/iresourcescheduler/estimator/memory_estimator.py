@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from .typing import ScheduleRequest, EstimatedMemory
+from typing import TYPE_CHECKING
+
+from iresourcescheduler.domain import EstimatedMemory
+
+if TYPE_CHECKING:
+    # 仅用于类型检查, 避免运行时循环依赖
+    from iresourcescheduler.domain import ScheduleRequest
 
 # 为简单起见, 默认 BF16 精度: 2 bytes/param, 开销系数 1.2
 DEFAULT_BYTES_PER_PARAM = 2
@@ -14,7 +20,7 @@ def _parse_params_b(params_b: float) -> float:
 
 
 def estimate_memory(
-    request: ScheduleRequest,
+    request: "ScheduleRequest",
     bytes_per_param: int = DEFAULT_BYTES_PER_PARAM,
     overhead_factor: float = DEFAULT_OVERHEAD_FACTOR,
 ) -> EstimatedMemory:
