@@ -69,13 +69,14 @@ pip install pytest
 
 ---
 
-### 集群状态来源：mock 与 cardinfo 接口
+### 集群状态来源：必须配置 cardinfo 接口
 
-- **默认**：未配置接口时，调度器使用 `get_cluster_states_mock()`，各集群返回固定“资源充足”的假数据。
-- **接入真实资源**：设置环境变量后，调度器会调用 **cardinfo 接口**（与项目根目录 `api.py` 中一致），仅使用 **PASS_THROUGH** 模式下的 `passThroughNodes`，汇总得到各集群的 `free_gpus`、`free_nodes`。
-  - `CARDINFO_API_BASE_URL`：接口根地址，例如 `https://your-ip`（不要带路径，内部会拼 `/ai/api/v1/k8s.resource/cardinfos`）。
-  - `CARDINFO_API_TOKEN`：可选，Bearer Token，未设置则需在代码里通过 `get_cluster_states(specs, headers={...})` 传入 Authorization。
-- 在代码中也可直接调用 `get_cluster_states(specs, base_url=..., use_api=True)` 强制走 API，或 `use_api=False` 强制 mock。
+- **默认行为**：未配置 cardinfo 接口时，调度器会**报错**（抛出 `CardinfoNotConfiguredError`），不会静默使用 mock。运行 CLI 或调用 `schedule()` 前必须配置真实接口。
+- **配置方式**：
+  - 环境变量 **`CARDINFO_API_BASE_URL`**：接口根地址，例如 `https://your-ip`（不要带路径，内部会拼 `/ai/api/v1/k8s.resource/cardinfos`）。
+  - 可选 **`CARDINFO_API_TOKEN`**：Bearer Token；未设置则需在代码里通过 `get_cluster_states(specs, headers={...})` 传入 Authorization。
+- **仅测试时使用 mock**：测试里通过 `conftest.py` 设置 **`IRESCHEDULER_USE_MOCK_STATE=1`** 使用 mock，无需真实接口。本地想不调 API 跑调度时也可设该环境变量。
+- 在代码中可传 `get_cluster_states(specs, use_api=False)` 显式使用 mock（仅适合测试）。
 
 ---
 
@@ -120,15 +121,20 @@ for d in decisions:
 
 ### 使用 CLI 调度
 
-项目根目录下（确保虚拟环境已激活并安装了本包）：
+项目根目录下（确保虚拟环境已激活并安装了本包）。**必须先配置 cardinfo 接口**，否则会报错：
 
 ```bash
-PYTHONPATH=src python -m iresourcescheduler.cli.main \
+export CARDINFO_API_BASE_URL="https://your-ip"
+export CARDINFO_API_TOKEN="xxxxxx"   # 可选
+
+python -m iresourcescheduler.cli.main \
   --model-id Qwen/Qwen3-72B \
   --model-params-b 72 \
   --engine vllm \
   --arch-requirement any
 ```
+
+或一行写法：`CARDINFO_API_BASE_URL="https://your-ip" python -m iresourcescheduler.cli.main ...`
 
 输出包括：
 

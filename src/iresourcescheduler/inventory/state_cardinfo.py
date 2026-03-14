@@ -137,13 +137,16 @@ def get_cluster_states_from_cardinfo_api(
 ) -> List[ClusterState]:
     """
     调用 cardinfo 接口，将返回解析为与 specs 对应的 ClusterState 列表。
+    未配置 base_url 或请求失败时抛出异常，不再静默回退。
 
     - base_url: 接口根地址（如 https://your-ip）；不传则从环境变量 CARDINFO_API_BASE_URL 读取。
     - headers: 可包含 Authorization 等；Bearer 可从环境变量 CARDINFO_API_TOKEN 读取。
     """
     base_url = base_url or os.environ.get("CARDINFO_API_BASE_URL", "").strip()
     if not base_url:
-        return []
+        raise ValueError(
+            "CARDINFO_API_BASE_URL 未设置，无法请求 cardinfo 接口。"
+        )
 
     h = dict(headers or {})
     if "Authorization" not in h and os.environ.get("CARDINFO_API_TOKEN"):
@@ -156,7 +159,9 @@ def get_cluster_states_from_cardinfo_api(
             proxies=proxies,
             verify=verify,
         )
-    except Exception:
-        return []
+    except Exception as e:
+        raise RuntimeError(
+            f"cardinfo 接口请求失败: {base_url}{CARDINFO_PATH} — {e!s}"
+        ) from e
 
     return parse_cardinfo_to_states(data, specs)
