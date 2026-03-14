@@ -62,19 +62,26 @@ def _build_decisions_from_plans(plans: List[Plan]) -> List[Decision]:
     return decisions
 
 
-def schedule(request: ScheduleRequest) -> List[Decision]:
+def schedule(
+    request: ScheduleRequest,
+    api_base_url: str | None = None,
+    api_token: str | None = None,
+) -> List[Decision]:
     """
     调度主入口.
 
     步骤:
     1. 显存估算;
     2. 加载集群规格;
-    3. 获取集群状态(当前使用 mock);
+    3. 获取集群状态（调用 cardinfo 接口，需提供 api_base_url 或设置 CARDINFO_API_BASE_URL）;
     4. 按引擎/架构过滤候选集群;
     5. 为每个候选集群生成 Plan;
     6. 过滤不可行 Plan;
     7. 对可行 Plan 做同构去重, 生成 Decisions;
     8. 写决策日志; 如无任何可行方案, 统一失败处理.
+
+    - api_base_url: cardinfo 接口根地址（如 https://your-ip），不传则读环境变量 CARDINFO_API_BASE_URL。
+    - api_token: Authorization Bearer 令牌，不传则读环境变量 CARDINFO_API_TOKEN。
     """
     # 1. 显存估算
     estimated = estimate_memory(request)
@@ -90,8 +97,11 @@ def schedule(request: ScheduleRequest) -> List[Decision]:
         handle_failure(event)
         return []
 
-    # 3. 获取集群状态（若配置 CARDINFO_API_BASE_URL 则走 cardinfo 接口，否则 mock）
-    states = get_cluster_states(specs)
+    # 3. 获取集群状态（api_base_url / api_token 优先于环境变量）
+    headers = None
+    if api_token is not None:
+        headers = {"Authorization": f"Bearer {api_token}"}
+    states = get_cluster_states(specs, base_url=api_base_url, headers=headers)
     state_map = {s.cluster_id: s for s in states}
 
     # 4. 过滤候选集群

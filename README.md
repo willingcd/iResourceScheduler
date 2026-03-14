@@ -121,9 +121,21 @@ for d in decisions:
 
 ### 使用 CLI 调度
 
-项目根目录下（确保虚拟环境已激活并安装了本包）。**必须先配置 cardinfo 接口**，否则会报错：
+项目根目录下（确保虚拟环境已激活并安装了本包）。**必须先配置 cardinfo 接口**（通过参数或环境变量），否则会报错：
 
 ```bash
+# 方式一：命令行参数（IP 和 Token 暴露在输入里）
+python -m iresourcescheduler.cli.main \
+  --model-id Qwen/Qwen3-72B \
+  --model-params-b 72 \
+  --engine vllm \
+  --arch-requirement any \
+  --api-base-url "https://your-ip" \
+  --api-token "your-bearer-token"
+```
+
+```bash
+# 方式二：环境变量
 export CARDINFO_API_BASE_URL="https://your-ip"
 export CARDINFO_API_TOKEN="xxxxxx"   # 可选
 
@@ -134,7 +146,7 @@ python -m iresourcescheduler.cli.main \
   --arch-requirement any
 ```
 
-或一行写法：`CARDINFO_API_BASE_URL="https://your-ip" python -m iresourcescheduler.cli.main ...`
+参数优先于环境变量：若同时传入 `--api-base-url` / `--api-token`，以参数为准。
 
 输出包括：
 
