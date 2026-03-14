@@ -24,7 +24,8 @@
   - `inventory/`：集群静态配置 + 集群状态获取
     - `clusters.yaml`：当前 4 个集群的规格（显存、机器数、卡数）
     - `specs_loader.py`：`load_cluster_specs()`，从 YAML 读静态配置
-    - `state_mock.py`：`get_cluster_states_mock()`，简单的 mock 资源状态（后续可接入真实系统）
+    - `state_mock.py`：`get_cluster_states_mock()`，简单的 mock 资源状态
+    - `state_cardinfo.py`：从 K8s **cardinfo 接口**获取实时可用资源（仅解析 PASS_THROUGH 节点），`get_cluster_states_from_cardinfo_api()` / `parse_cardinfo_to_states()`；调度器通过 `get_cluster_states(specs)` 自动在「配置了接口时走 API、否则 mock」之间切换
   - `compatibility/`：兼容性规则
     - `rules.py`：`filter_compatible_clusters()`，按引擎/架构筛选候选集群
   - `planner/`：单集群资源规划
@@ -58,13 +59,23 @@ pip install -e .
 这会安装：
 
 - 包本身：`iresourcescheduler`
-- 依赖：`PyYAML`
+- 依赖：`PyYAML`、`requests`（用于 cardinfo 接口）
 
 建议同时安装开发依赖（pytest 等）：
 
 ```bash
 pip install pytest
 ```
+
+---
+
+### 集群状态来源：mock 与 cardinfo 接口
+
+- **默认**：未配置接口时，调度器使用 `get_cluster_states_mock()`，各集群返回固定“资源充足”的假数据。
+- **接入真实资源**：设置环境变量后，调度器会调用 **cardinfo 接口**（与项目根目录 `api.py` 中一致），仅使用 **PASS_THROUGH** 模式下的 `passThroughNodes`，汇总得到各集群的 `free_gpus`、`free_nodes`。
+  - `CARDINFO_API_BASE_URL`：接口根地址，例如 `https://your-ip`（不要带路径，内部会拼 `/ai/api/v1/k8s.resource/cardinfos`）。
+  - `CARDINFO_API_TOKEN`：可选，Bearer Token，未设置则需在代码里通过 `get_cluster_states(specs, headers={...})` 传入 Authorization。
+- 在代码中也可直接调用 `get_cluster_states(specs, base_url=..., use_api=True)` 强制走 API，或 `use_api=False` 强制 mock。
 
 ---
 
@@ -145,7 +156,7 @@ pytest
 
 ### 后续扩展方向（预留点）
 
-- **真实集群状态接入**：用 `inventory.state_*` 替换当前的 `state_mock`，接入 K8s / Slurm / 自研资源系统。
+- **集群状态**：已支持通过 cardinfo 接口（`CARDINFO_API_BASE_URL`）获取实时 PASS_THROUGH 资源；可再接入其他 K8s/Slurm 数据源或扩展 SHARED 模式解析。
 - **更精细的显存模型**：按引擎、精度（BF16/FP8/INT8/INT4）、上下文长度等维度调整估算公式。
 - **更多调度策略**：
   - 支持队列/排队（当前只做“是否可立即调度”的判断）

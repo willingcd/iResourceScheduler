@@ -10,7 +10,7 @@ from iresourcescheduler.domain import (
     FailureEvent,
 )
 from iresourcescheduler.estimator import estimate_memory
-from iresourcescheduler.inventory import load_cluster_specs, get_cluster_states_mock
+from iresourcescheduler.inventory import load_cluster_specs, get_cluster_states
 from iresourcescheduler.logging import log_decision, handle_failure
 from iresourcescheduler.planner import plan_for_cluster
 
@@ -90,8 +90,8 @@ def schedule(request: ScheduleRequest) -> List[Decision]:
         handle_failure(event)
         return []
 
-    # 3. 获取集群状态 (暂用 mock)
-    states = get_cluster_states_mock([s.cluster_id for s in specs])
+    # 3. 获取集群状态（若配置 CARDINFO_API_BASE_URL 则走 cardinfo 接口，否则 mock）
+    states = get_cluster_states(specs)
     state_map = {s.cluster_id: s for s in states}
 
     # 4. 过滤候选集群

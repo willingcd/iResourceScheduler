@@ -9,6 +9,7 @@ description = "Intelligent GPU resource scheduler for heterogeneous clusters"
 requires-python = ">=3.9"
 dependencies = [
   "PyYAML>=6.0",
+  "requests>=2.28.0",
 ]
 
 [tool.setuptools.packages.find]
