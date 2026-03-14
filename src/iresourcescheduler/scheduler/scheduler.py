@@ -100,7 +100,7 @@ def schedule(
     # 3. 获取集群状态（api_base_url / api_token 优先于环境变量）
     headers = None
     if api_token is not None:
-        headers = {"Authorization": f"Bearer {api_token}"}
+        headers = {"Authorization": f"Basic {api_token}"}
     states = get_cluster_states(specs, base_url=api_base_url, headers=headers)
     state_map = {s.cluster_id: s for s in states}
 

@@ -124,10 +124,9 @@ for d in decisions:
 项目根目录下（确保虚拟环境已激活并安装了本包）。**必须先配置 cardinfo 接口**（通过参数或环境变量），否则会报错：
 
 ```bash
-# 方式一：命令行参数（IP 和 Token 暴露在输入里）
+# 方式一：命令行参数（IP 和 Token 暴露在输入里）；--model-params-b 可不传，会从 --model-id 中解析（如 Qwen3.5-397B-A17B 取 397）
 python -m iresourcescheduler.cli.main \
   --model-id Qwen/Qwen3-72B \
-  --model-params-b 72 \
   --engine vllm \
   --arch-requirement any \
   --api-base-url "https://your-ip" \
@@ -141,10 +140,11 @@ export CARDINFO_API_TOKEN="xxxxxx"   # 可选
 
 python -m iresourcescheduler.cli.main \
   --model-id Qwen/Qwen3-72B \
-  --model-params-b 72 \
   --engine vllm \
   --arch-requirement any
 ```
+
+**参数量**：不传 `--model-params-b` 时，会从 `--model-id` 中解析所有「数字+B」并取最大值（如 `Qwen3.5-397B-A17B` → 397）；无法解析时需显式传 `--model-params-b`。
 
 参数优先于环境变量：若同时传入 `--api-base-url` / `--api-token`，以参数为准。
 

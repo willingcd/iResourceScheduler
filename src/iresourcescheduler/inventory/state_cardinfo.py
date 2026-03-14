@@ -19,7 +19,7 @@ _API_VENDOR_TO_VENDOR: Dict[str, Vendor] = {
 }
 
 # cardinfo 接口路径（相对 base_url）
-CARDINFO_PATH = "/ai/api/v1/k8s.resource/cardinfos"
+CARDINFO_PATH = "/ai/api/v1/k8s/resource/cardinfos"
 PASS_THROUGH_KEY = "PASS_THROUGH"
 PASS_THROUGH_NODES_KEY = "passThroughNodes"
 
