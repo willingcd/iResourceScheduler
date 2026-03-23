@@ -11,6 +11,7 @@ from iresourcescheduler.domain import (
 )
 from iresourcescheduler.estimator import estimate_memory
 from iresourcescheduler.inventory import load_cluster_specs, get_cluster_states
+from iresourcescheduler.inventory.state_cardinfo import build_cardinfo_authorization_headers
 from iresourcescheduler.logging import log_decision, handle_failure
 from iresourcescheduler.planner import plan_for_cluster
 
@@ -81,7 +82,7 @@ def schedule(
     8. 写决策日志; 如无任何可行方案, 统一失败处理.
 
     - api_base_url: cardinfo 接口根地址（如 https://your-ip），不传则读环境变量 CARDINFO_API_BASE_URL。
-    - api_token: Authorization Bearer 令牌，不传则读环境变量 CARDINFO_API_TOKEN。
+    - api_token: 完整 Authorization 头值（与 export AUTHORIZATION 一致），不传则从环境变量读取。
     """
     # 1. 显存估算
     estimated = estimate_memory(request)
@@ -97,10 +98,8 @@ def schedule(
         handle_failure(event)
         return []
 
-    # 3. 获取集群状态（api_base_url / api_token 优先于环境变量）
-    headers = None
-    if api_token is not None:
-        headers = {"Authorization": f"Basic {api_token}"}
+    # 3. 获取集群状态；Authorization 为完整头值，由环境变量或 api_token 传入（export 时一并写好），代码不拼接前缀。
+    headers = build_cardinfo_authorization_headers(api_token=api_token)
     states = get_cluster_states(specs, base_url=api_base_url, headers=headers)
     state_map = {s.cluster_id: s for s in states}
 

@@ -6,6 +6,7 @@ from iresourcescheduler.domain import ClusterSpec, ClusterState
 from .specs_loader import load_cluster_specs
 from .state_mock import get_cluster_states_mock
 from .state_cardinfo import (
+    build_cardinfo_authorization_headers,
     get_cluster_states_from_cardinfo_api,
     parse_cardinfo_to_states,
 )
@@ -13,6 +14,7 @@ from .state_cardinfo import (
 __all__ = [
     "load_cluster_specs",
     "get_cluster_states_mock",
+    "build_cardinfo_authorization_headers",
     "get_cluster_states_from_cardinfo_api",
     "parse_cardinfo_to_states",
     "get_cluster_states",

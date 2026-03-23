@@ -73,8 +73,11 @@ pip install pytest
 
 - **默认行为**：未配置 cardinfo 接口时，调度器会**报错**（抛出 `CardinfoNotConfiguredError`），不会静默使用 mock。运行 CLI 或调用 `schedule()` 前必须配置真实接口。
 - **配置方式**：
-  - 环境变量 **`CARDINFO_API_BASE_URL`**：接口根地址，例如 `https://your-ip`（不要带路径，内部会拼 `/ai/api/v1/k8s.resource/cardinfos`）。
-  - 可选 **`CARDINFO_API_TOKEN`**：Bearer Token；未设置则需在代码里通过 `get_cluster_states(specs, headers={...})` 传入 Authorization。
+  - 环境变量 **`CARDINFO_API_BASE_URL`**：接口根地址，例如 `https://your-ip`（不要带路径，内部会拼 `/ai/api/v1/k8s/resource/cardinfos`）。
+  - **鉴权（推荐用环境变量，勿在代码里写密钥）**：值为 **HTTP `Authorization` 头的完整字段**（你在 `export` 时一次性写好整段，代码**不会**自动加 `Bearer` 等前缀）。任选其一：
+    - **`AUTHORIZATION`** / **`Authorization`** / **`CARDINFO_API_AUTHORIZATION`**
+    - **`CARDINFO_API_TOKEN`**（与上面相同语义：填完整 Authorization 值）
+  - 命令行 **`--api-token`**：与上述相同，传入完整 Authorization 值；若已设置 `AUTHORIZATION` 等环境变量，仍以环境变量优先。
 - **仅测试时使用 mock**：测试里通过 `conftest.py` 设置 **`IRESCHEDULER_USE_MOCK_STATE=1`** 使用 mock，无需真实接口。本地想不调 API 跑调度时也可设该环境变量。
 - 在代码中可传 `get_cluster_states(specs, use_api=False)` 显式使用 mock（仅适合测试）。
 
@@ -130,13 +133,13 @@ python -m iresourcescheduler.cli.main \
   --engine vllm \
   --arch-requirement any \
   --api-base-url "https://your-ip" \
-  --api-token "your-bearer-token"
+  --api-token "完整Authorization值"
 ```
 
 ```bash
 # 方式二：环境变量
 export CARDINFO_API_BASE_URL="https://your-ip"
-export CARDINFO_API_TOKEN="xxxxxx"   # 可选
+export CARDINFO_API_TOKEN="完整Authorization值"   # 可选，与 AUTHORIZATION 二选一即可
 
 python -m iresourcescheduler.cli.main \
   --model-params-b 72 \
@@ -146,12 +149,51 @@ python -m iresourcescheduler.cli.main \
 
 **参数量**：必须传入 `--model-params-b`（单位 B，如 `72` 表示 72B）。`--model-id` 可选，仅用于日志/追踪。
 
-参数优先于环境变量：若同时传入 `--api-base-url` / `--api-token`，以参数为准。
+`--api-base-url` 会覆盖环境变量中的 base URL。鉴权以 **`AUTHORIZATION` 等环境变量优先**；未设置时再考虑 `--api-token` / `CARDINFO_API_TOKEN`（均为完整 Authorization 值）。
 
 输出包括：
 
 - 一条或多条 `[DECISION] {...}` 日志（记录完整调度信息）
 - 最后一段是格式化的 `Decision` 列表 JSON，方便在终端直接查看
+
+---
+
+### Prefect 编排（多 Task 单文件）
+
+项目根目录下的 **`prefect_flow.py`** 将调度流水线拆成多个 `@task`，由 `@flow` `resource_scheduler_flow` 串联（与 `schedule()` 逻辑一致）。
+
+安装：
+
+```bash
+pip install -e ".[prefect]"
+```
+
+运行（与 CLI 参数类似；测试时可设 `IRESCHEDULER_USE_MOCK_STATE=1`）：
+
+```bash
+PYTHONPATH=src python prefect_flow.py \
+  --model-params-b 72 \
+  --engine vllm \
+  --arch-requirement any \
+  --api-base-url "https://your-ip" \
+  --api-token "完整Authorization值"
+```
+
+在代码中调用：
+
+```python
+from prefect_flow import resource_scheduler_flow
+
+decisions = resource_scheduler_flow(
+    model_params_b=72,
+    engine="vllm",
+    model_id="Qwen/Qwen3-72B",
+    api_base_url="https://...",
+    api_token="...",
+)
+```
+
+可在 Prefect UI / `prefect server` 中查看每次 Flow Run 与各 Task 状态。
 
 ---
 

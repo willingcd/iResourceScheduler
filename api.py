@@ -6,12 +6,13 @@
 import requests
 
 ip = "xxx"
-url = "https://" + ip + "/ai/api/v1/k8s.resource/cardinfos"
+url = "https://" + ip + "/ai/api/v1/k8s/resource/cardinfos"
 
 headers = {
     "User-Agent": "yaak",
     "Accept": "*/*",
-    "Authorization": "Bearer xxxxxx"
+    # 与调度器一致：Authorization 为完整头值，建议用环境变量 export AUTHORIZATION='...' 再 os.environ 读取
+    "Authorization": "xxxxxx",
 }
 
 resp = requests.get(url, headers=headers, proxies={"http": "", "https": ""}, verify=False)

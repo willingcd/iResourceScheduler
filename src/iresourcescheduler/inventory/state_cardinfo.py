@@ -23,6 +23,44 @@ CARDINFO_PATH = "/ai/api/v1/k8s/resource/cardinfos"
 PASS_THROUGH_KEY = "PASS_THROUGH"
 PASS_THROUGH_NODES_KEY = "passThroughNodes"
 
+# 环境变量名：完整的 Authorization 头字段值（勿在代码里写密钥；export 时一并写好整段字符串）
+_AUTH_ENV_KEYS = (
+    "AUTHORIZATION",
+    "Authorization",
+    "CARDINFO_API_AUTHORIZATION",
+)
+
+
+def build_cardinfo_authorization_headers(
+    api_token: Optional[str] = None,
+) -> Optional[Dict[str, str]]:
+    """
+    构造 cardinfo 请求的 Authorization 头，**不从代码硬编码密钥**。
+
+    所有来源的值均为「HTTP Authorization 头的完整字段值」：在 shell 里 ``export`` 时一并写好
+    （含 ``Bearer `` 等前缀，若你的网关需要），**代码不会自动拼接 Bearer**。
+
+    优先级:
+    1. 环境变量（任选其一）::
+           export AUTHORIZATION='...'
+           export Authorization='...'
+           export CARDINFO_API_AUTHORIZATION='...'
+    2. 函数参数 ``api_token``（如 CLI ``--api-token``）：整段 Authorization 值，原样放入请求头
+    3. 环境变量 ``CARDINFO_API_TOKEN``：同上，整段值原样放入请求头
+
+    若以上皆无，返回 None（请求将不带 Authorization）。
+    """
+    for key in _AUTH_ENV_KEYS:
+        val = os.environ.get(key, "").strip()
+        if val:
+            return {"Authorization": val}
+    if api_token is not None:
+        return {"Authorization": str(api_token).strip()}
+    token_only = os.environ.get("CARDINFO_API_TOKEN", "").strip()
+    if token_only:
+        return {"Authorization": token_only}
+    return None
+
 
 def _parse_pass_through_nodes(info: Dict[str, Any]) -> List[Dict[str, Any]]:
     """从某卡型下的信息中取出 PASS_THROUGH.passThroughNodes 列表."""
@@ -140,7 +178,7 @@ def get_cluster_states_from_cardinfo_api(
     未配置 base_url 或请求失败时抛出异常，不再静默回退。
 
     - base_url: 接口根地址（如 https://your-ip）；不传则从环境变量 CARDINFO_API_BASE_URL 读取。
-    - headers: 可包含 Authorization 等；Bearer 可从环境变量 CARDINFO_API_TOKEN 读取。
+    - headers: 可包含 Authorization；未传时由 build_cardinfo_authorization_headers 从环境变量解析。
     """
     base_url = base_url or os.environ.get("CARDINFO_API_BASE_URL", "").strip()
     if not base_url:
@@ -149,8 +187,10 @@ def get_cluster_states_from_cardinfo_api(
         )
 
     h = dict(headers or {})
-    if "Authorization" not in h and os.environ.get("CARDINFO_API_TOKEN"):
-        h["Authorization"] = "Bearer " + os.environ.get("CARDINFO_API_TOKEN", "")
+    if not str(h.get("Authorization", "")).strip():
+        extra = build_cardinfo_authorization_headers(api_token=None)
+        if extra:
+            h.update(extra)
 
     try:
         data = fetch_cardinfo(

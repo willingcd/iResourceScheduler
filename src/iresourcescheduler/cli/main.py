@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--engine", required=True)
     parser.add_argument("--arch-requirement", default="any", help="any / ascend / nvidia")
     parser.add_argument("--api-base-url", default=None, help="cardinfo 接口根地址，如 https://your-ip（不传则读环境变量 CARDINFO_API_BASE_URL）")
-    parser.add_argument("--api-token", default=None, help="cardinfo 接口 Authorization Bearer 令牌（不传则读环境变量 CARDINFO_API_TOKEN）")
+    parser.add_argument("--api-token", default=None, help="cardinfo 接口 Authorization 完整值（与 export AUTHORIZATION 相同；不传则读环境变量）")
 
     args = parser.parse_args(argv)
 
